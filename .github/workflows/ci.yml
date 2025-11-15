@@ -1,0 +1,35 @@
+name: CI - FastAPI DevOps Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          pip install -r app/requirements.txt
+
+      - name: Lint Python files
+        run: |
+          python -m py_compile app/main.py
+
+      - name: Build Docker image
+        run: |
+          docker build -t devops-lab-felipe -f docker/Dockerfile .
+
+      - name: List Docker images (debug)
+        run: docker images
