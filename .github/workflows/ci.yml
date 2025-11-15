@@ -2,16 +2,16 @@ name: CI - FastAPI DevOps Pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Checkout repository
         uses: actions/checkout@v3
 
       - name: Set up Python
@@ -23,13 +23,28 @@ jobs:
         run: |
           pip install -r app/requirements.txt
 
-      - name: Lint Python files
+      - name: Validate Python syntax
         run: |
           python -m py_compile app/main.py
 
+      - name: Run FastAPI tests (simple health check)
+        run: |
+          python - << 'EOF'
+          from fastapi.testclient import TestClient
+          from app.main import app
+
+          client = TestClient(app)
+          response = client.get("/health")
+
+          assert response.status_code == 200
+          assert response.json()["status"] == "ok"
+
+          print("Health check OK")
+          EOF
+
       - name: Build Docker image
         run: |
-          docker build -t devops-lab-felipe -f docker/Dockerfile .
+          docker build -t fastapi-app -f docker/Dockerfile .
 
-      - name: List Docker images (debug)
+      - name: List built Docker images
         run: docker images
